@@ -23,6 +23,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Configure Pages
+        # Enables GitHub Pages with the "GitHub Actions" (workflow) source on first run.
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
