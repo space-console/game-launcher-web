@@ -1,8 +1,9 @@
-# DocFX build output — HTML is generated in CI, never committed.
-# Markdown is the single source of truth.
-_site/
-api/
-.docfx/
-obj/
-bin/
+# Build output — the cache-busted site is generated in CI, never committed.
+# Source (index.html + assets) is the single source of truth.
+_dist/
 node_modules/
+
+# Local runtime / tooling
+server.log
+package-lock.json
+.DS_Store
