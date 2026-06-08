@@ -1,0 +1,31 @@
+{
+  "$schema": "https://raw.githubusercontent.com/dotnet/docfx/main/schemas/docfx.schema.json",
+  "build": {
+    "content": [
+      {
+        "files": [ "**/*.md", "**/toc.yml" ],
+        "exclude": [
+          "_site/**",
+          "wiki/**",
+          "**/bin/**",
+          "**/obj/**",
+          "**/node_modules/**"
+        ]
+      }
+    ],
+    "resource": [
+      {
+        "files": [ "docs/images/**" ]
+      }
+    ],
+    "output": "_site",
+    "template": [ "default", "modern" ],
+    "globalMetadata": {
+      "_appName": "game-launcher-web",
+      "_appTitle": "game-launcher-web",
+      "_enableSearch": true,
+      "_disableContribution": false
+    },
+    "markdownEngineName": "markdig"
+  }
+}

@@ -1,0 +1,8 @@
+# DocFX build output — HTML is generated in CI, never committed.
+# Markdown is the single source of truth.
+_site/
+api/
+.docfx/
+obj/
+bin/
+node_modules/
