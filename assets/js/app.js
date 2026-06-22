@@ -29,7 +29,7 @@ function renderGames() {
     tile.innerHTML = `
       <div class="tile__body">
         <div class="tile__title">${escapeHtml(game.title)}</div>
-        <div class="tile__players">${game.minPlayers}–${game.maxPlayers} players</div>
+        <div class="tile__players">${playersLabel(game)}</div>
       </div>`;
 
     tile.addEventListener("sn:focus", () => renderHero(game));
@@ -47,7 +47,7 @@ function renderHero(game) {
       <h1 class="hero__title">${escapeHtml(game.title)}</h1>
       <p class="hero__desc">${escapeHtml(game.description)}</p>
       <div class="hero__meta">
-        <span>${game.minPlayers}–${game.maxPlayers} players</span>
+        <span>${playersLabel(game)}</span>
         <span>Press Enter to launch</span>
       </div>
     </div>`;
@@ -80,7 +80,9 @@ function tickClock() {
 }
 
 // ---- Wire input -----------------------------------------------------------
-input.on((intent) => {
+// One handler for every intent source — local input (keyboard / remote / pad)
+// and intents relayed from a phone controller over the peer connection.
+function handleIntent(intent) {
   switch (intent) {
     case "up": nav.move("up"); break;
     case "down": nav.move("down"); break;
@@ -89,7 +91,9 @@ input.on((intent) => {
     case "enter": nav.activate(); break;
     case "back": onBack(); break;
   }
-});
+}
+
+input.on(handleIntent);
 
 function onBack() {
   if (location.hash) {
@@ -108,6 +112,10 @@ function boot() {
     document.getElementById("roomCode").textContent = e.detail.roomCode;
   });
   session.addEventListener("change", (e) => renderPlayers(e.detail.players));
+  session.addEventListener("intent", (e) => handleIntent(e.detail.intent));
+  session.addEventListener("error", () => {
+    document.getElementById("roomCode").textContent = "offline";
+  });
   session.connect();
 
   input.start();
@@ -116,6 +124,14 @@ function boot() {
 
   // Re-assert focus after layout changes (resize / orientation on tablets).
   window.addEventListener("resize", () => nav.focusInitial());
+}
+
+// "1 player" when the seat count is fixed at one, "N–M players" otherwise.
+function playersLabel(game) {
+  if (game.minPlayers === game.maxPlayers) {
+    return `${game.minPlayers} player${game.minPlayers === 1 ? "" : "s"}`;
+  }
+  return `${game.minPlayers}–${game.maxPlayers} players`;
 }
 
 function escapeHtml(s) {
