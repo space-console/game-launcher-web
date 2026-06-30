@@ -58,6 +58,10 @@ body {
   height: 100%;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  /* Cap the single column at the viewport width. Without minmax(0, …) the
+     column grows to the rail's min-content (all game tiles), pushing the
+     top-bar (room code + clock) off-screen where overflow:hidden clips it. */
+  grid-template-columns: minmax(0, 1fr);
   padding: var(--safe-y) var(--safe-x);
   gap: calc(var(--u) * 2);
 }
@@ -105,7 +109,7 @@ body {
 .clock { color: var(--text-dim); font-variant-numeric: tabular-nums; font-size: 1.1em; }
 
 /* ---- Stage / hero ------------------------------------------------------- */
-.stage { min-height: 0; display: grid; grid-template-rows: auto 1fr; gap: calc(var(--u) * 3); }
+.stage { min-height: 0; display: grid; grid-template-rows: auto 1fr; grid-template-columns: minmax(0, 1fr); gap: calc(var(--u) * 3); }
 
 .hero {
   position: relative;
@@ -128,7 +132,7 @@ body {
 .hero__meta  { display: flex; gap: calc(var(--u) * 1.5); margin-top: calc(var(--u) * 1.4); color: var(--text-dim); font-size: 0.85em; }
 
 /* ---- Game rail ---------------------------------------------------------- */
-.rail { min-height: 0; display: flex; flex-direction: column; gap: calc(var(--u) * 1.4); }
+.rail { min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: calc(var(--u) * 1.4); }
 .rail__title { font-size: 1.1em; color: var(--text-dim); font-weight: 600; letter-spacing: 0.06em; }
 .rail__track {
   display: grid;
@@ -187,6 +191,15 @@ body {
   background: var(--surface); border: 1px solid var(--surface-2);
   border-radius: 0.4em; font-family: inherit; font-size: 0.9em; color: var(--text);
 }
+
+/* ---- Game shell (iframe overlay) ---------------------------------------- */
+/* A launched game fills the screen over the launcher, which keeps running
+   underneath (its WebRTC controller links stay alive). [hidden] removes it. */
+.gameframe {
+  position: fixed; inset: 0; width: 100%; height: 100%;
+  border: 0; margin: 0; background: var(--bg); z-index: 1000;
+}
+.gameframe[hidden] { display: none; }
 
 /* ---- Motion ------------------------------------------------------------- */
 @keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }

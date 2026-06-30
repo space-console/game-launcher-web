@@ -13,6 +13,11 @@ const session = new PlayerSession();
 
 const grid = document.getElementById("gameGrid");
 const hero = document.getElementById("hero");
+const gameFrame = document.getElementById("gameFrame");
+
+// Launcher mode: "menu" drives spatial navigation; "game" means a game is
+// running in the shell iframe and intents are relayed to it instead.
+let mode = "menu";
 
 // ---- Render game tiles ----------------------------------------------------
 function renderGames() {
@@ -53,12 +58,36 @@ function renderHero(game) {
     </div>`;
 }
 
+// ---- Game shell -----------------------------------------------------------
+// Launch into a persistent iframe instead of navigating away, so the page —
+// and with it the live WebRTC controller links — survives the launch. The
+// launcher relays controller intents into the running game over postMessage.
 function launch(game) {
-  // Hand off to the game. Same-origin games can be route changes; external
-  // ones a full navigation. Kept simple for v1.
-  if (game.url.startsWith("#")) location.hash = game.url.slice(1);
-  else location.href = game.url;
+  openGame(game);
   console.info("[launcher] launching", game.id);
+}
+
+function openGame(game) {
+  gameFrame.src = game.url;
+  gameFrame.hidden = false;
+  mode = "game";
+  // Focus the frame so local keyboard/remote input reaches the game, not the
+  // menu underneath. Phone-controller intents are relayed explicitly below.
+  gameFrame.focus();
+}
+
+function closeGame() {
+  gameFrame.hidden = true;
+  gameFrame.removeAttribute("src"); // unload the game and free its resources
+  mode = "menu";
+  nav.focusInitial();
+}
+
+// Relay a gameplay intent into the running game. The game injects it via its
+// shared Input layer (input.emit), identical to a local key/pad/touch press.
+function relayToGame(intent) {
+  if (!gameFrame.contentWindow) return;
+  gameFrame.contentWindow.postMessage({ type: "sc:intent", intent }, location.origin);
 }
 
 // ---- Player roster (AirConsole-style) ------------------------------------
@@ -83,6 +112,13 @@ function tickClock() {
 // One handler for every intent source — local input (keyboard / remote / pad)
 // and intents relayed from a phone controller over the peer connection.
 function handleIntent(intent) {
+  // While a game runs, the launcher owns exit (Back returns to the menu) and
+  // relays every other intent into the game rather than moving the hidden menu.
+  if (mode === "game") {
+    if (intent === "back") closeGame();
+    else relayToGame(intent);
+    return;
+  }
   switch (intent) {
     case "up": nav.move("up"); break;
     case "down": nav.move("down"); break;

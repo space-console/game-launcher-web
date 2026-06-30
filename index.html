@@ -44,6 +44,11 @@
     </footer>
   </div>
 
+  <!-- Persistent game shell: games load here instead of a full navigation, so
+       the launcher (and its live WebRTC controller links) survives launch.
+       allow same-origin only; no extra capabilities granted to the game. -->
+  <iframe id="gameFrame" class="gameframe" title="Game" hidden></iframe>
+
   <script type="module" src="./assets/js/app.js"></script>
 </body>
 </html>
