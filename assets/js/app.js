@@ -13,6 +13,7 @@ const session = new PlayerSession();
 
 const grid = document.getElementById("gameGrid");
 const hero = document.getElementById("hero");
+const heroContent = document.getElementById("heroContent");
 const gameFrame = document.getElementById("gameFrame");
 
 // Launcher mode: "menu" drives spatial navigation; "game" means a game is
@@ -46,7 +47,8 @@ function renderGames() {
 // ---- Hero (reflects the focused game) ------------------------------------
 function renderHero(game) {
   hero.style.backgroundImage = game.art;
-  hero.innerHTML = `
+  // Write into the persistent content div so the scan-to-join QR aside survives.
+  heroContent.innerHTML = `
     <div class="hero__inner">
       <div class="hero__tag">${escapeHtml(game.tagline)}</div>
       <h1 class="hero__title">${escapeHtml(game.title)}</h1>
@@ -101,6 +103,23 @@ function renderPlayers(players) {
     .join("");
 }
 
+// ---- Scan-to-join QR -------------------------------------------------------
+// Encode the controller URL with the room baked in, so a phone scans straight
+// onto the pad. Built from the page's own origin, so it works on LAN, over a
+// tunnel, or in production without any config.
+function renderJoinQr(roomCode) {
+  document.getElementById("joinUrl").textContent = location.host;
+  const box = document.getElementById("joinQr");
+  if (!box || typeof window.qrcode !== "function") return;
+  const joinUrl = `${location.origin}/t.html?room=${encodeURIComponent(roomCode)}`;
+  const qr = window.qrcode(0, "M");
+  qr.addData(joinUrl);
+  qr.make();
+  box.innerHTML = qr.createSvgTag({ scalable: true, margin: 1 });
+  const aside = document.getElementById("heroJoin");
+  if (aside) aside.hidden = false; // reveal once the QR is drawn
+}
+
 // ---- Clock ----------------------------------------------------------------
 function tickClock() {
   const el = document.getElementById("clock");
@@ -146,6 +165,7 @@ function boot() {
 
   session.addEventListener("ready", (e) => {
     document.getElementById("roomCode").textContent = e.detail.roomCode;
+    renderJoinQr(e.detail.roomCode);
   });
   session.addEventListener("change", (e) => renderPlayers(e.detail.players));
   session.addEventListener("intent", (e) => handleIntent(e.detail.intent));
