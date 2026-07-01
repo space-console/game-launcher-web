@@ -20,6 +20,11 @@ const gameFrame = document.getElementById("gameFrame");
 // running in the shell iframe and intents are relayed to it instead.
 let mode = "menu";
 
+// Control layouts pushed to phones (Back is always present on the controller).
+// Menu + undeclared games use the d-pad; a game overrides via sc:controls.
+const MENU_CONTROLS = { type: "controls", profile: "dpad", buttons: [{ id: "enter", label: "Select" }] };
+const GAME_CONTROLS = { type: "controls", profile: "dpad", buttons: [{ id: "enter", label: "A" }] };
+
 // ---- Render game tiles ----------------------------------------------------
 function renderGames() {
   grid.innerHTML = "";
@@ -73,6 +78,8 @@ function openGame(game) {
   gameFrame.src = game.url;
   gameFrame.hidden = false;
   mode = "game";
+  // Default in-game pad until the game declares its own layout (sc:controls).
+  session.setControls(GAME_CONTROLS);
   // Focus the frame so local keyboard/remote input reaches the game, not the
   // menu underneath. Phone-controller intents are relayed explicitly below.
   gameFrame.focus();
@@ -82,8 +89,17 @@ function closeGame() {
   gameFrame.hidden = true;
   gameFrame.removeAttribute("src"); // unload the game and free its resources
   mode = "menu";
+  session.setControls(MENU_CONTROLS); // back to the menu pad
   nav.focusInitial();
 }
+
+// A running game declares the controller layout it wants; relay it to phones.
+window.addEventListener("message", (e) => {
+  const msg = e.data;
+  if (!msg || msg.type !== "sc:controls") return;
+  if (e.source !== gameFrame.contentWindow) return; // only the running game
+  session.setControls({ type: "controls", profile: msg.profile, buttons: msg.buttons || [] });
+});
 
 // Relay a gameplay intent into the running game. The game injects it via its
 // shared Input layer (input.emit), identical to a local key/pad/touch press.
@@ -172,6 +188,7 @@ function boot() {
   session.addEventListener("error", () => {
     document.getElementById("roomCode").textContent = "offline";
   });
+  session.setControls(MENU_CONTROLS); // controllers join to the menu pad
   session.connect();
 
   input.start();
