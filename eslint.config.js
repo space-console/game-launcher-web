@@ -27,6 +27,6 @@ export default [
   },
   {
     // Build outputs / vendored assets — never lint these.
-    ignores: ["_dist/**", "_site/**", "node_modules/**"],
+    ignores: ["_dist/**", "_site/**", "node_modules/**", "assets/js/vendor/**"],
   },
 ];
