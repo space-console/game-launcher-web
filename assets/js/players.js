@@ -147,12 +147,14 @@ function makeRoomCode(len = 4) {
   return code;
 }
 
-// Where the signaling service lives. Defaults to the page's host on :8080 so
-// serving the launcher from a LAN IP lets phones reach it automatically;
-// override with ?signal=ws://<host>:<port>.
+// Where the signaling service lives. Defaults to the page's OWN origin
+// (host:port), so serving the app + signaling from one server (web-api with
+// STATIC_DIR) just works — and phones can reach it, since iOS only lets page JS
+// reach the origin host:port. Override with ?signal=ws://<host>:<port> when the
+// signaling service runs on a different host/port.
 function signalingUrl() {
   const override = new URLSearchParams(location.search).get("signal");
   if (override) return override;
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
-  return `${proto}//${location.hostname || "localhost"}:8080`;
+  return `${proto}//${location.host || "localhost:8080"}`;
 }
