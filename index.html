@@ -29,7 +29,13 @@
     </header>
 
     <main class="stage">
-      <section class="hero" id="hero" aria-live="polite"></section>
+      <section class="hero" id="hero" aria-live="polite">
+        <div class="hero__content" id="heroContent"></div>
+        <aside class="hero__join" id="heroJoin" hidden>
+          <span class="hero__join-label">Scan to join</span>
+          <div class="hero__qr" id="joinQr"></div>
+        </aside>
+      </section>
 
       <section class="rail" aria-label="Games">
         <h2 class="rail__title">Games</h2>
@@ -49,6 +55,9 @@
        allow same-origin only; no extra capabilities granted to the game. -->
   <iframe id="gameFrame" class="gameframe" title="Game" hidden></iframe>
 
-  <script type="module" src="./assets/js/app.js?v=af94b1c4-05d7-4ea2-8d2e-ee27af333abe"></script>
+  <!-- QR generator (MIT, vendored) — exposes global `qrcode`; loaded before the
+       module so app.js can render the scan-to-join code. -->
+  <script src="./assets/js/vendor/qrcode.js?v=cedb9cd5-e272-4e10-a0a5-3d288fb5a156"></script>
+  <script type="module" src="./assets/js/app.js?v=cedb9cd5-e272-4e10-a0a5-3d288fb5a156"></script>
 </body>
 </html>
