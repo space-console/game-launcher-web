@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- TV browsers default to a desktop-width viewport; pin to device width and lock zoom for the 10-foot UI. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#05060f" />
+  <title>Space Console</title>
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="stylesheet" href="./assets/css/style.css" />
+</head>
+<body>
+  <!-- safe-area wrapper protects against TV overscan; see --safe-* in style.css -->
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand__mark" aria-hidden="true"></span>
+        <span class="brand__name">Space&nbsp;Console</span>
+      </div>
+      <div class="players" id="players" aria-label="Connected players">
+        <div class="players__join">
+          <span class="players__label">Join at</span>
+          <span class="players__url" id="joinUrl">play.spaceconsole.tv</span>
+          <span class="players__code" id="roomCode">····</span>
+        </div>
+        <ul class="players__list" id="playerList"></ul>
+      </div>
+      <div class="clock" id="clock" aria-hidden="true">--:--</div>
+    </header>
+
+    <main class="stage">
+      <section class="hero" id="hero" aria-live="polite"></section>
+
+      <section class="rail" aria-label="Games">
+        <h2 class="rail__title">Games</h2>
+        <div class="rail__track" id="gameGrid" role="list"></div>
+      </section>
+    </main>
+
+    <footer class="hintbar" id="hintbar">
+      <span class="hint"><kbd class="key">↑↓←→</kbd> Navigate</span>
+      <span class="hint"><kbd class="key">Enter</kbd> Launch</span>
+      <span class="hint"><kbd class="key">Back</kbd> Return</span>
+    </footer>
+  </div>
+
+  <!-- Persistent game shell: games load here instead of a full navigation, so
+       the launcher (and its live WebRTC controller links) survives launch.
+       allow same-origin only; no extra capabilities granted to the game. -->
+  <iframe id="gameFrame" class="gameframe" title="Game" hidden></iframe>
+
+  <script type="module" src="./assets/js/app.js?v=02d48270-86bc-424c-ae37-805b48ecb19d"></script>
+</body>
+</html>
