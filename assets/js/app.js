@@ -2,10 +2,10 @@
 // Renders the catalog, wires input → spatial navigation → launch, and shows
 // the AirConsole-style player roster.
 
-import { games } from "./games.js?v=cedb9cd5-e272-4e10-a0a5-3d288fb5a156";
-import { SpatialNav } from "./spatial-nav.js?v=cedb9cd5-e272-4e10-a0a5-3d288fb5a156";
-import { Input } from "./input.js?v=cedb9cd5-e272-4e10-a0a5-3d288fb5a156";
-import { PlayerSession } from "./players.js?v=cedb9cd5-e272-4e10-a0a5-3d288fb5a156";
+import { games } from "./games.js?v=409959c5-fcc8-467c-bcc0-e5d2bde568e4";
+import { SpatialNav } from "./spatial-nav.js?v=409959c5-fcc8-467c-bcc0-e5d2bde568e4";
+import { Input } from "./input.js?v=409959c5-fcc8-467c-bcc0-e5d2bde568e4";
+import { PlayerSession } from "./players.js?v=409959c5-fcc8-467c-bcc0-e5d2bde568e4";
 
 const nav = new SpatialNav();
 const input = new Input();
@@ -19,6 +19,11 @@ const gameFrame = document.getElementById("gameFrame");
 // Launcher mode: "menu" drives spatial navigation; "game" means a game is
 // running in the shell iframe and intents are relayed to it instead.
 let mode = "menu";
+
+// Control layouts pushed to phones (Back is always present on the controller).
+// Menu + undeclared games use the d-pad; a game overrides via sc:controls.
+const MENU_CONTROLS = { type: "controls", profile: "dpad", buttons: [{ id: "enter", label: "Select" }] };
+const GAME_CONTROLS = { type: "controls", profile: "dpad", buttons: [{ id: "enter", label: "A" }] };
 
 // ---- Render game tiles ----------------------------------------------------
 function renderGames() {
@@ -73,6 +78,8 @@ function openGame(game) {
   gameFrame.src = game.url;
   gameFrame.hidden = false;
   mode = "game";
+  // Default in-game pad until the game declares its own layout (sc:controls).
+  session.setControls(GAME_CONTROLS);
   // Focus the frame so local keyboard/remote input reaches the game, not the
   // menu underneath. Phone-controller intents are relayed explicitly below.
   gameFrame.focus();
@@ -82,8 +89,17 @@ function closeGame() {
   gameFrame.hidden = true;
   gameFrame.removeAttribute("src"); // unload the game and free its resources
   mode = "menu";
+  session.setControls(MENU_CONTROLS); // back to the menu pad
   nav.focusInitial();
 }
+
+// A running game declares the controller layout it wants; relay it to phones.
+window.addEventListener("message", (e) => {
+  const msg = e.data;
+  if (!msg || msg.type !== "sc:controls") return;
+  if (e.source !== gameFrame.contentWindow) return; // only the running game
+  session.setControls({ type: "controls", profile: msg.profile, buttons: msg.buttons || [] });
+});
 
 // Relay a gameplay intent into the running game. The game injects it via its
 // shared Input layer (input.emit), identical to a local key/pad/touch press.
@@ -172,6 +188,7 @@ function boot() {
   session.addEventListener("error", () => {
     document.getElementById("roomCode").textContent = "offline";
   });
+  session.setControls(MENU_CONTROLS); // controllers join to the menu pad
   session.connect();
 
   input.start();

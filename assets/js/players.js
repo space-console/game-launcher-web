@@ -35,6 +35,18 @@ export class PlayerSession extends EventTarget {
     this._ws = null;
     this._peers = new Map(); // guestId -> { pc, dc, name, pendingIce: [] }
     this._count = 0;
+    this._controls = null;   // latest control layout to hand new/all controllers
+  }
+
+  /** Set the active control layout and push it to every connected controller. */
+  setControls(msg) {
+    this._controls = msg;
+    const data = JSON.stringify(msg);
+    for (const peer of this._peers.values()) {
+      if (peer.dc && peer.dc.readyState === "open") {
+        try { peer.dc.send(data); } catch { /* channel closing */ }
+      }
+    }
   }
 
   /** Register the room and begin accepting controllers. */
@@ -95,7 +107,13 @@ export class PlayerSession extends EventTarget {
     pc.addEventListener("datachannel", (e) => {
       peer.dc = e.channel;
       // Only count a controller as present once its channel is actually open.
-      peer.dc.addEventListener("open", () => this._add({ id, name: peer.name }));
+      peer.dc.addEventListener("open", () => {
+        this._add({ id, name: peer.name });
+        // Hand the newcomer the current control layout so it renders the right pad.
+        if (this._controls) {
+          try { peer.dc.send(JSON.stringify(this._controls)); } catch { /* closing */ }
+        }
+      });
       peer.dc.addEventListener("message", (m) =>
         this.dispatchEvent(new CustomEvent("intent", { detail: { intent: String(m.data), from: id } }))
       );
