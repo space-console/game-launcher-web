@@ -8,7 +8,24 @@
 // Gameplay intents arrive over each phone's DataChannel peer-to-peer; the
 // signaling service is only used to set the connections up.
 
-const ICE_SERVERS = [{ urls: "stun:stun.l.google.com:19302" }];
+// RTCPeerConnection config. Defaults to free public STUN; an optional TURN relay
+// can be added per device WITHOUT code changes via query params (mirrors ?signal=):
+//   ?turn=turn:<host>:3478&turnuser=<u>&turncred=<p>   add a TURN server
+//   ?relay=1                                           force relay-only (to verify TURN)
+// The same URL points at a local coturn now or a hosted/college TURN later.
+function rtcConfig() {
+  const q = new URLSearchParams(location.search);
+  const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+  const turn = q.get("turn");
+  if (turn) {
+    // Comma-separated list → one server with multiple URLs (ICE tries each).
+    const urls = turn.split(",").map((s) => s.trim()).filter(Boolean);
+    iceServers.push({ urls, username: q.get("turnuser") || "", credential: q.get("turncred") || "" });
+  }
+  const config = { iceServers };
+  if (q.get("relay") === "1") config.iceTransportPolicy = "relay";
+  return config;
+}
 
 export class PlayerSession extends EventTarget {
   constructor() {
@@ -68,7 +85,7 @@ export class PlayerSession extends EventTarget {
   }
 
   _addPeer(id, name) {
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const pc = new RTCPeerConnection(rtcConfig());
     const peer = { pc, dc: null, name: name || `Player ${++this._count}`, pendingIce: [] };
     this._peers.set(id, peer);
 
