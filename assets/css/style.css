@@ -221,6 +221,41 @@ body {
 }
 .gameframe[hidden] { display: none; }
 
+/* ---- In-game HUD (room + rejoin QR + roster), above the game ------------ */
+.gamehud {
+  position: fixed; z-index: 1001;
+  top: var(--safe-y); right: var(--safe-x);
+  display: flex; flex-direction: column; align-items: flex-end;
+  gap: calc(var(--u) * 0.8); font-size: var(--fs-base);
+}
+.gamehud[hidden] { display: none; }
+.gamehud__chip {
+  display: flex; align-items: center; gap: calc(var(--u) * 0.8);
+  padding: calc(var(--u) * 0.6) calc(var(--u) * 1.2);
+  border: 0; border-radius: 999px; cursor: pointer;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  color: var(--text); backdrop-filter: blur(8px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+}
+.gamehud__code { font-weight: 700; letter-spacing: 0.12em; font-variant-numeric: tabular-nums; }
+.gamehud__dots { display: flex; gap: calc(var(--u) * 0.4); list-style: none; }
+.gamehud__dot { width: 0.6em; height: 0.6em; border-radius: 50%; background: var(--good); }
+.gamehud__panel {
+  padding: calc(var(--u) * 1.4); border-radius: var(--radius);
+  background: color-mix(in srgb, var(--surface) 92%, transparent);
+  backdrop-filter: blur(10px); box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  display: flex; flex-direction: column; align-items: center; gap: calc(var(--u) * 0.9);
+  max-width: 42vw;
+}
+.gamehud__panel[hidden] { display: none; }
+.gamehud__qr { width: clamp(120px, 16vw, 240px); aspect-ratio: 1; background: #fff; padding: 6px; border-radius: 10px; }
+.gamehud__qr svg { width: 100%; height: 100%; display: block; }
+.gamehud__hint { color: var(--text-dim); font-size: 0.85em; }
+.gamehud__roster { list-style: none; display: flex; flex-wrap: wrap; gap: calc(var(--u) * 0.6); justify-content: center; }
+
+.player__seat { color: var(--text-dim); font-size: 0.82em; font-weight: 700; }
+.player__lead { font-size: 0.9em; }
+
 /* ---- Motion ------------------------------------------------------------- */
 @keyframes pop { from { transform: scale(0.6); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
