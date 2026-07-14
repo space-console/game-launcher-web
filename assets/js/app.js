@@ -275,7 +275,16 @@ function boot() {
   renderGames();
   nav.focusInitial();
 
+  // Reuse this tab's previous room code (sessionStorage) so a launcher reload or
+  // return-from-background reclaims the SAME code instead of minting a new one —
+  // the server hands it back if the old room was freed, so phones stay valid.
+  try {
+    const saved = sessionStorage.getItem("sc.hostRoom");
+    if (saved) session.roomCode = saved;
+  } catch { /* private mode */ }
+
   session.addEventListener("ready", (e) => {
+    try { sessionStorage.setItem("sc.hostRoom", e.detail.roomCode); } catch { /* private mode */ }
     document.getElementById("roomCode").textContent = e.detail.roomCode;
     renderJoinQr(e.detail.roomCode);
   });
