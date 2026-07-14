@@ -2,11 +2,11 @@
 // Renders the catalog, wires input → spatial navigation → launch, and shows
 // the AirConsole-style player roster.
 
-import { games } from "./games.js?v=d537b380-d9f4-42a2-9f12-de0dc51a642a";
-import { SpatialNav } from "./spatial-nav.js?v=d537b380-d9f4-42a2-9f12-de0dc51a642a";
-import { Input } from "./input.js?v=d537b380-d9f4-42a2-9f12-de0dc51a642a";
-import { PlayerSession } from "./players.js?v=d537b380-d9f4-42a2-9f12-de0dc51a642a";
-import { Stats } from "./stats.js?v=d537b380-d9f4-42a2-9f12-de0dc51a642a";
+import { games } from "./games.js?v=5ef29c91-6c7e-498c-87fa-778ecc6779a7";
+import { SpatialNav } from "./spatial-nav.js?v=5ef29c91-6c7e-498c-87fa-778ecc6779a7";
+import { Input } from "./input.js?v=5ef29c91-6c7e-498c-87fa-778ecc6779a7";
+import { PlayerSession } from "./players.js?v=5ef29c91-6c7e-498c-87fa-778ecc6779a7";
+import { Stats } from "./stats.js?v=5ef29c91-6c7e-498c-87fa-778ecc6779a7";
 
 const nav = new SpatialNav();
 const input = new Input();
@@ -275,7 +275,16 @@ function boot() {
   renderGames();
   nav.focusInitial();
 
+  // Reuse this tab's previous room code (sessionStorage) so a launcher reload or
+  // return-from-background reclaims the SAME code instead of minting a new one —
+  // the server hands it back if the old room was freed, so phones stay valid.
+  try {
+    const saved = sessionStorage.getItem("sc.hostRoom");
+    if (saved) session.roomCode = saved;
+  } catch { /* private mode */ }
+
   session.addEventListener("ready", (e) => {
+    try { sessionStorage.setItem("sc.hostRoom", e.detail.roomCode); } catch { /* private mode */ }
     document.getElementById("roomCode").textContent = e.detail.roomCode;
     renderJoinQr(e.detail.roomCode);
   });
