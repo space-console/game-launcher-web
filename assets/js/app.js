@@ -2,7 +2,7 @@
 // Renders the catalog, wires input → spatial navigation → launch, and shows
 // the AirConsole-style player roster.
 
-import { games } from "./games.js";
+import { games, CATEGORY_ORDER } from "./games.js";
 import { SpatialNav } from "./spatial-nav.js";
 import { Input } from "./input.js";
 import { PlayerSession } from "./players.js";
@@ -29,28 +29,106 @@ let currentGame = null;
 const MENU_CONTROLS = { type: "controls", profile: "dpad", buttons: [{ id: "enter", label: "Select" }] };
 const GAME_CONTROLS = { type: "controls", profile: "dpad", buttons: [{ id: "enter", label: "A" }] };
 
+// Active category filter ("All" shows every row). Set by the filter chips.
+let activeCategory = "All";
+
+// ---- Filter chips ---------------------------------------------------------
+// A row of category filters above the rails. Focusable so a TV remote reaches
+// them; selecting one narrows the rails to that category.
+function renderFilters() {
+  const bar = document.getElementById("filters");
+  if (!bar) return;
+  bar.innerHTML = "";
+  for (const name of ["All", ...CATEGORY_ORDER]) {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "filter" + (name === activeCategory ? " is-active" : "");
+    chip.dataset.focusable = "";
+    chip.dataset.filter = name;
+    chip.setAttribute("tabindex", "-1");
+    chip.setAttribute("aria-pressed", String(name === activeCategory));
+    chip.textContent = name;
+    chip.addEventListener("click", () => selectFilter(name));
+    bar.appendChild(chip);
+  }
+}
+
+function selectFilter(name) {
+  if (name === activeCategory) return;
+  activeCategory = name;
+  renderFilters();
+  renderGames();
+  focusFirstTile(); // move onto the first tile of the now-filtered list
+}
+
+// Focus the first game tile (not a filter chip), so the hero reflects a game on
+// load and after filtering. Filters remain reachable by pressing Up.
+function focusFirstTile() {
+  const first = grid.querySelector(".tile[data-focusable]");
+  if (first) nav.focus(first);
+  else nav.focusInitial();
+}
+
 // ---- Render game tiles ----------------------------------------------------
+// Games are grouped into one horizontal rail per category (CATEGORY_ORDER),
+// so the catalog reads as a few labelled rows instead of one long scroll.
 function renderGames() {
   grid.innerHTML = "";
-  for (const game of games) {
-    const tile = document.createElement("div");
-    tile.className = "tile";
-    tile.dataset.focusable = "";
-    tile.dataset.gameId = game.id;
-    tile.setAttribute("role", "listitem");
-    tile.setAttribute("tabindex", "-1");
-    tile.setAttribute("aria-label", game.title);
-    tile.style.backgroundImage = game.art;
-    tile.innerHTML = `
-      <div class="tile__body">
-        <div class="tile__title">${escapeHtml(game.title)}</div>
-        <div class="tile__players">${playersLabel(game)}</div>
-      </div>`;
+  const byCategory = groupByCategory(games);
+  for (const category of CATEGORY_ORDER) {
+    if (activeCategory !== "All" && category !== activeCategory) continue;
+    const list = byCategory.get(category);
+    if (!list || !list.length) continue;
 
-    tile.addEventListener("sn:focus", () => renderHero(game));
-    tile.addEventListener("click", () => launch(game));
-    grid.appendChild(tile);
+    const rail = document.createElement("section");
+    rail.className = "rail";
+    rail.setAttribute("aria-label", category);
+
+    const title = document.createElement("h2");
+    title.className = "rail__title";
+    title.textContent = category;
+    rail.appendChild(title);
+
+    const track = document.createElement("div");
+    track.className = "rail__track";
+    track.setAttribute("role", "list");
+    for (const game of list) track.appendChild(makeTile(game));
+    rail.appendChild(track);
+
+    grid.appendChild(rail);
   }
+}
+
+// Group the flat catalog into category → games, preserving catalog order within
+// each category. Categories not in CATEGORY_ORDER simply won't render.
+function groupByCategory(list) {
+  const map = new Map();
+  for (const game of list) {
+    if (!map.has(game.category)) map.set(game.category, []);
+    map.get(game.category).push(game);
+  }
+  return map;
+}
+
+function makeTile(game) {
+  const tile = document.createElement("div");
+  tile.className = "tile";
+  tile.dataset.focusable = "";
+  tile.dataset.gameId = game.id;
+  tile.setAttribute("role", "listitem");
+  tile.setAttribute("tabindex", "-1");
+  tile.setAttribute("aria-label", game.title);
+  // Real game screenshot on top, gradient as fallback if the image is missing.
+  tile.style.backgroundImage = `url("${game.thumb}"), ${game.art}`;
+  tile.innerHTML = `
+    <div class="tile__body">
+      <div class="tile__title">${escapeHtml(game.title)}</div>
+      <div class="tile__players">${playersLabel(game)}</div>
+    </div>`;
+
+  tile.addEventListener("sn:focus", () => renderHero(game));
+  tile.addEventListener("click", () => launch(game));
+  return tile;
 }
 
 // ---- Hero (reflects the focused game) ------------------------------------
@@ -59,7 +137,7 @@ function renderHero(game) {
   // Write into the persistent content div so the scan-to-join QR aside survives.
   heroContent.innerHTML = `
     <div class="hero__inner">
-      <div class="hero__tag">${escapeHtml(game.tagline)}</div>
+      <div class="hero__tag"><span class="hero__glyph" aria-hidden="true">${game.icon || ""}</span>${escapeHtml(game.tagline)}</div>
       <h1 class="hero__title">${escapeHtml(game.title)}</h1>
       <p class="hero__desc">${escapeHtml(game.description)}</p>
       <div class="hero__meta">
@@ -272,8 +350,9 @@ function onBack() {
 
 // ---- Boot -----------------------------------------------------------------
 function boot() {
+  renderFilters();
   renderGames();
-  nav.focusInitial();
+  focusFirstTile();
 
   // Reuse this tab's previous room code (sessionStorage) so a launcher reload or
   // return-from-background reclaims the SAME code instead of minting a new one —
