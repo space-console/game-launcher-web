@@ -2,11 +2,11 @@
 // Renders the catalog, wires input → spatial navigation → launch, and shows
 // the AirConsole-style player roster.
 
-import { games, CATEGORY_ORDER } from "./games.js?v=4e0e940e-1186-48bd-85fa-b8c4274087ca";
-import { SpatialNav } from "./spatial-nav.js?v=4e0e940e-1186-48bd-85fa-b8c4274087ca";
-import { Input } from "./input.js?v=4e0e940e-1186-48bd-85fa-b8c4274087ca";
-import { PlayerSession } from "./players.js?v=4e0e940e-1186-48bd-85fa-b8c4274087ca";
-import { Stats } from "./stats.js?v=4e0e940e-1186-48bd-85fa-b8c4274087ca";
+import { games, CATEGORY_ORDER } from "./games.js?v=6dde8cbd-0bd5-4040-a0be-99aa1e582480";
+import { SpatialNav } from "./spatial-nav.js?v=6dde8cbd-0bd5-4040-a0be-99aa1e582480";
+import { Input } from "./input.js?v=6dde8cbd-0bd5-4040-a0be-99aa1e582480";
+import { PlayerSession } from "./players.js?v=6dde8cbd-0bd5-4040-a0be-99aa1e582480";
+import { Stats } from "./stats.js?v=6dde8cbd-0bd5-4040-a0be-99aa1e582480";
 
 const nav = new SpatialNav();
 const input = new Input();
