@@ -37,10 +37,13 @@
         </aside>
       </section>
 
-      <section class="rail" aria-label="Games">
-        <h2 class="rail__title">Games</h2>
-        <div class="rail__track" id="gameGrid" role="list"></div>
-      </section>
+      <!-- Category filter chips (built by app.js). Selecting one narrows the
+           rails below to that category; "All" shows every row. -->
+      <nav class="filters" id="filters" aria-label="Filter games"></nav>
+
+      <!-- One horizontal rail per category (built by app.js). The region scrolls
+           vertically between categories; each rail scrolls horizontally. -->
+      <section class="rails" id="gameGrid" aria-label="Games"></section>
     </main>
 
     <footer class="hintbar" id="hintbar">
