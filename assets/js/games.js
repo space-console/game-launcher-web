@@ -27,6 +27,7 @@ export const CATEGORY_ORDER = ["Puzzle", "Arcade", "Board & Strategy", "Cards", 
 // so a player recognizes the game at a glance without any binary image assets.
 const catalog = [
   { id: "rc-rush", title: "RC Rush", tagline: "Racing", category: "Arcade", icon: "🏎️", description: "Radio-controlled racing — drift the pack over three laps and take the flag.", minPlayers: 1, maxPlayers: 1, art: "linear-gradient(135deg, #16a34a, #4f8cff)" },
+  { id: "yardline-rc", title: "Yardline RC", tagline: "3D Racing", category: "Arcade", icon: "🏁", description: "Small cars, serious racing — a 3D arcade RC racer. Steer with your phone: analog wheel, gas, and brake.", minPlayers: 1, maxPlayers: 1, art: "linear-gradient(135deg, #17191d, #e0533d)" },
   { id: "tetris", title: "Tetris", tagline: "Puzzle", category: "Puzzle", icon: "🟦", description: "Stack falling tetrominoes, clear lines, and chase the high score.", minPlayers: 1, maxPlayers: 1, art: "linear-gradient(135deg, #4f8cff, #b14bff)" },
   { id: "snake", title: "Snake", tagline: "Arcade", category: "Arcade", icon: "🐍", description: "Eat, grow, and don't bite your tail. The classic, faster every bite.", minPlayers: 1, maxPlayers: 1, art: "linear-gradient(135deg, #16a34a, #38e8a0)" },
   { id: "sudoku", title: "Sudoku", tagline: "Puzzle", category: "Puzzle", icon: "🔢", description: "Fill the grid so every row, column, and box holds 1 through 9.", minPlayers: 1, maxPlayers: 1, art: "linear-gradient(135deg, #0f2027, #2c5364)" },

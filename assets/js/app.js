@@ -238,6 +238,17 @@ function relayToGame(intent, slot) {
   gameFrame.contentWindow.postMessage({ type: "sc:intent", intent, player: slot || 1 }, location.origin);
 }
 
+// Relay a continuous analog frame (steering + pedals) from a phone's analog pad
+// into the running game. Only meaningful while a game is up; ignored on the menu.
+function relayAnalogToGame(detail) {
+  if (mode !== "game" || !gameFrame.contentWindow) return;
+  gameFrame.contentWindow.postMessage({
+    type: "sc:analog",
+    steer: detail.steer, throttle: detail.throttle, brake: detail.brake, handbrake: detail.handbrake,
+    player: detail.slot || 1,
+  }, location.origin);
+}
+
 // ---- Player roster (AirConsole-style) ------------------------------------
 // Rendered both on the menu (top bar) and, during a game, in the shell HUD. The
 // lead player (drives menus / switches games) wears a crown.
@@ -372,6 +383,7 @@ function boot() {
     broadcastRoster(); // keep the running game's turn-by-name labels current
   });
   session.addEventListener("intent", (e) => handleIntent(e.detail.intent, e.detail.slot, e.detail.lead));
+  session.addEventListener("analog", (e) => relayAnalogToGame(e.detail));
   session.addEventListener("error", () => {
     document.getElementById("roomCode").textContent = "offline";
   });
