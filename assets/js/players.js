@@ -141,11 +141,26 @@ export class PlayerSession extends EventTarget {
           try { peer.dc.send(JSON.stringify(this._controls)); } catch { /* closing */ }
         }
       });
-      peer.dc.addEventListener("message", (m) =>
-        this.dispatchEvent(new CustomEvent("intent", {
-          detail: { intent: String(m.data), from: id, slot: peer.slot || 1, lead: id === this._leadId },
-        }))
-      );
+      peer.dc.addEventListener("message", (m) => {
+        // Two payload shapes share this channel:
+        //  - bare string intents ("up", "enter", "gas:release") — every game;
+        //  - a compact analog frame `{t:"a",s,g,b,h}` — driving games only.
+        // Analog frames are JSON objects marked t:"a"; anything else is an intent
+        // string, so existing games are untouched.
+        const analog = parseAnalog(m.data);
+        if (analog) {
+          this.dispatchEvent(new CustomEvent("analog", {
+            detail: {
+              steer: analog.s, throttle: analog.g, brake: analog.b, handbrake: !!analog.h,
+              from: id, slot: peer.slot || 1,
+            },
+          }));
+        } else {
+          this.dispatchEvent(new CustomEvent("intent", {
+            detail: { intent: String(m.data), from: id, slot: peer.slot || 1, lead: id === this._leadId },
+          }));
+        }
+      });
       peer.dc.addEventListener("close", () => this._dropPeer(id));
     });
     pc.addEventListener("connectionstatechange", () => {
@@ -190,6 +205,19 @@ export class PlayerSession extends EventTarget {
     this.players.sort((a, b) => a.slot - b.slot);
     for (const p of this.players) p.lead = p.id === this._leadId;
     this.dispatchEvent(new CustomEvent("change", { detail: { players: this.players } }));
+  }
+}
+
+// Decode an analog controller frame, or null if the payload is a plain intent
+// string. Frames are JSON objects tagged `t:"a"`; the `{` fast-path avoids
+// JSON.parse on the common intent-string case.
+function parseAnalog(data) {
+  if (typeof data !== "string" || data.charCodeAt(0) !== 123 /* { */) return null;
+  try {
+    const o = JSON.parse(data);
+    return o && o.t === "a" ? o : null;
+  } catch {
+    return null;
   }
 }
 
