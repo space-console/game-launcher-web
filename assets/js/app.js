@@ -2,11 +2,11 @@
 // Renders the catalog, wires input → spatial navigation → launch, and shows
 // the AirConsole-style player roster.
 
-import { games, CATEGORY_ORDER } from "./games.js?v=46cfa56d-183f-4164-af29-dbdcf6043529";
-import { SpatialNav } from "./spatial-nav.js?v=46cfa56d-183f-4164-af29-dbdcf6043529";
-import { Input } from "./input.js?v=46cfa56d-183f-4164-af29-dbdcf6043529";
-import { PlayerSession } from "./players.js?v=46cfa56d-183f-4164-af29-dbdcf6043529";
-import { Stats } from "./stats.js?v=46cfa56d-183f-4164-af29-dbdcf6043529";
+import { games, CATEGORY_ORDER } from "./games.js?v=963da75a-7c92-4d6a-806e-f6aaef508ff5";
+import { SpatialNav } from "./spatial-nav.js?v=963da75a-7c92-4d6a-806e-f6aaef508ff5";
+import { Input } from "./input.js?v=963da75a-7c92-4d6a-806e-f6aaef508ff5";
+import { PlayerSession } from "./players.js?v=963da75a-7c92-4d6a-806e-f6aaef508ff5";
+import { Stats } from "./stats.js?v=963da75a-7c92-4d6a-806e-f6aaef508ff5";
 
 const nav = new SpatialNav();
 const input = new Input();
@@ -238,6 +238,17 @@ function relayToGame(intent, slot) {
   gameFrame.contentWindow.postMessage({ type: "sc:intent", intent, player: slot || 1 }, location.origin);
 }
 
+// Relay a continuous analog frame (steering + pedals) from a phone's analog pad
+// into the running game. Only meaningful while a game is up; ignored on the menu.
+function relayAnalogToGame(detail) {
+  if (mode !== "game" || !gameFrame.contentWindow) return;
+  gameFrame.contentWindow.postMessage({
+    type: "sc:analog",
+    steer: detail.steer, throttle: detail.throttle, brake: detail.brake, handbrake: detail.handbrake,
+    player: detail.slot || 1,
+  }, location.origin);
+}
+
 // ---- Player roster (AirConsole-style) ------------------------------------
 // Rendered both on the menu (top bar) and, during a game, in the shell HUD. The
 // lead player (drives menus / switches games) wears a crown.
@@ -372,6 +383,7 @@ function boot() {
     broadcastRoster(); // keep the running game's turn-by-name labels current
   });
   session.addEventListener("intent", (e) => handleIntent(e.detail.intent, e.detail.slot, e.detail.lead));
+  session.addEventListener("analog", (e) => relayAnalogToGame(e.detail));
   session.addEventListener("error", () => {
     document.getElementById("roomCode").textContent = "offline";
   });
