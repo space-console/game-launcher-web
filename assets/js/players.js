@@ -8,14 +8,34 @@
 // Gameplay intents arrive over each phone's DataChannel peer-to-peer; the
 // signaling service is only used to set the connections up.
 
-// RTCPeerConnection config. Defaults to free public STUN; an optional TURN relay
-// can be added per device WITHOUT code changes via query params (mirrors ?signal=):
+// RTCPeerConnection config. Public STUN is enough while both devices sit on one
+// network; a TURN relay is what makes everything else work (phone on mobile data,
+// TV on Wi-Fi, iOS's mDNS-masked candidates). TURN credentials come from the
+// server at `/api/ice` — they can't be committed, since this repo is public.
+//
+// Fetched once at load, into a module-level cache, so peer setup stays
+// synchronous: a phone can appear at any moment and must be registered before
+// the next signal addressed to it arrives.
+//
+// Query params still win, for pointing a single device at a TURN the server
+// doesn't know about (mirrors ?signal=):
 //   ?turn=turn:<host>:3478&turnuser=<u>&turncred=<p>   add a TURN server
 //   ?relay=1                                           force relay-only (to verify TURN)
-// The same URL points at a local coturn now or a hosted/college TURN later.
+const DEFAULT_ICE = [{ urls: "stun:stun.l.google.com:19302" }];
+let vendedIce = null;
+
+// Best-effort: if there's no /api/ice (e.g. the app is on a static host), we
+// simply fall back to STUN, which still covers same-network play.
+const iceReady = fetch("/api/ice")
+  .then((r) => (r.ok ? r.json() : null))
+  .then((d) => {
+    if (d && Array.isArray(d.iceServers) && d.iceServers.length) vendedIce = d.iceServers;
+  })
+  .catch(() => { /* no server-vended ICE — STUN only */ });
+
 function rtcConfig() {
   const q = new URLSearchParams(location.search);
-  const iceServers = [{ urls: "stun:stun.l.google.com:19302" }];
+  const iceServers = (vendedIce || DEFAULT_ICE).slice();
   const turn = q.get("turn");
   if (turn) {
     // Comma-separated list → one server with multiple URLs (ICE tries each).
@@ -78,14 +98,20 @@ export class PlayerSession extends EventTarget {
 
   /** Register the room and begin accepting controllers. */
   connect() {
-    const ws = new WebSocket(signalingUrl());
-    this._ws = ws;
-    ws.addEventListener("open", () => {
-      ws.send(JSON.stringify({ type: "create", code: this.roomCode }));
-    });
-    ws.addEventListener("message", (ev) => this._onMessage(JSON.parse(ev.data)));
-    ws.addEventListener("error", () => {
-      this.dispatchEvent(new CustomEvent("error", { detail: { reason: "signal-unreachable" } }));
+    // Don't register the room until the TURN config has landed: a phone could join
+    // the moment the room exists, and each peer's ICE servers are fixed when its
+    // RTCPeerConnection is constructed. The fetch starts at page load, so this
+    // costs nothing in practice. Stays synchronous for callers (app.js:391).
+    iceReady.then(() => {
+      const ws = new WebSocket(signalingUrl());
+      this._ws = ws;
+      ws.addEventListener("open", () => {
+        ws.send(JSON.stringify({ type: "create", code: this.roomCode }));
+      });
+      ws.addEventListener("message", (ev) => this._onMessage(JSON.parse(ev.data)));
+      ws.addEventListener("error", () => {
+        this.dispatchEvent(new CustomEvent("error", { detail: { reason: "signal-unreachable" } }));
+      });
     });
     return this;
   }

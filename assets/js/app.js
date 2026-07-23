@@ -2,11 +2,11 @@
 // Renders the catalog, wires input → spatial navigation → launch, and shows
 // the AirConsole-style player roster.
 
-import { games, CATEGORY_ORDER } from "./games.js?v=963da75a-7c92-4d6a-806e-f6aaef508ff5";
-import { SpatialNav } from "./spatial-nav.js?v=963da75a-7c92-4d6a-806e-f6aaef508ff5";
-import { Input } from "./input.js?v=963da75a-7c92-4d6a-806e-f6aaef508ff5";
-import { PlayerSession } from "./players.js?v=963da75a-7c92-4d6a-806e-f6aaef508ff5";
-import { Stats } from "./stats.js?v=963da75a-7c92-4d6a-806e-f6aaef508ff5";
+import { games, CATEGORY_ORDER } from "./games.js?v=3edafc5f-d473-4416-82fc-da34f61f46dd";
+import { SpatialNav } from "./spatial-nav.js?v=3edafc5f-d473-4416-82fc-da34f61f46dd";
+import { Input } from "./input.js?v=3edafc5f-d473-4416-82fc-da34f61f46dd";
+import { PlayerSession } from "./players.js?v=3edafc5f-d473-4416-82fc-da34f61f46dd";
+import { Stats } from "./stats.js?v=3edafc5f-d473-4416-82fc-da34f61f46dd";
 
 const nav = new SpatialNav();
 const input = new Input();
@@ -279,7 +279,10 @@ function renderPlayers(players) {
 // tunnel, or in production without any config.
 function buildQr(box, roomCode) {
   if (!box || typeof window.qrcode !== "function") return;
-  const joinUrl = `${location.origin}/t.html?room=${encodeURIComponent(roomCode)}`;
+  // Straight to the controller. (This used to point at the untracked dev helper
+  // /t.html, which existed only to inject TURN credentials by hand; the controller
+  // now gets those from the server at /api/ice, and /t.html isn't in a deploy.)
+  const joinUrl = `${location.origin}/game-controller/?room=${encodeURIComponent(roomCode)}`;
   const qr = window.qrcode(0, "M");
   qr.addData(joinUrl);
   qr.make();
