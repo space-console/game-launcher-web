@@ -279,7 +279,10 @@ function renderPlayers(players) {
 // tunnel, or in production without any config.
 function buildQr(box, roomCode) {
   if (!box || typeof window.qrcode !== "function") return;
-  const joinUrl = `${location.origin}/t.html?room=${encodeURIComponent(roomCode)}`;
+  // Straight to the controller. (This used to point at the untracked dev helper
+  // /t.html, which existed only to inject TURN credentials by hand; the controller
+  // now gets those from the server at /api/ice, and /t.html isn't in a deploy.)
+  const joinUrl = `${location.origin}/game-controller/?room=${encodeURIComponent(roomCode)}`;
   const qr = window.qrcode(0, "M");
   qr.addData(joinUrl);
   qr.make();
